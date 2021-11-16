@@ -1,7 +1,6 @@
 # CDM-Device-Checker
 
-Easily parse the cdm device info from: https://tools.axinom.com/decoders/LicenseRequest
-By passing the license base64 in the argument.
+Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest
 
 ## USAGE:
 
