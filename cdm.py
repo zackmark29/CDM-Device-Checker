@@ -20,7 +20,7 @@ def extract_challenge(client_id_blob: Path, quite: bool) -> str:
     try:
         client_id.ParseFromString(client_id_blob.read_bytes())
     except DecodeError:
-        raise DecodeError('[ERROR]: Client id failed to parse as ClientIdentification')
+        raise DecodeError(f'[ERROR]: Unable to parse {client_id_blob}')
 
     lic_request = SignedLicenseRequest()
     lic_request.Msg.ClientId.CopyFrom(client_id)
