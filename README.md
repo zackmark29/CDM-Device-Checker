@@ -13,7 +13,6 @@ Easily parse the cdm device info response from: https://tools.axinom.com/decoder
 ----
 
 ## USAGE:
-
 ```
 py check.py "challenge base64" or "client_id_blob file"  
 
@@ -21,9 +20,9 @@ py check.py -t/--test (for testing purpose)
 
 add -q/--quite if you don't want to print the results
 ```
+----
 
-# RESULT
-
+## RESULT
 ```json
 {
     "status": "Active",
