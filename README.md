@@ -2,12 +2,24 @@
 
 Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest
 
+## CHANGELOGS:
+
+## [1.0.1] | 2021.11.04
+- Added protobuf for parsing client_id_blob
+- Extract challenge directly from client_id_blob file
+- Fully refactored for getting/matching device info
+- Added arguments (see --help)
+- Display the error if found in the response
+----
+
 ## USAGE:
 
 ```
-py check_device.py test  
-or  
-py check_device.py "license_base64"
+py check.py "challenge base64" or "client_id_blob file"  
+
+py check.py -t/--test (for testing purpose)
+
+add -q/--quite if you don't want to print the results
 ```
 
 # RESULT
