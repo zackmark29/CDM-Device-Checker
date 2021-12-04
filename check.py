@@ -77,7 +77,7 @@ def get_device_info(challenge: str, quite: bool) -> None:
         'systemId': system_id,
         'securityLevel': {
             '1': 'LEVEL_1',
-            '3': 'LEVEL_2'
+            '3': 'LEVEL_3'
         }.get(get('Security Level')),
         'manufacturer': get('Manufacturer'),
         'model': get('Model'),
