@@ -4,7 +4,13 @@ Easily parse the cdm device info response from: https://tools.axinom.com/decoder
 
 ## CHANGELOGS:
 
-## [1.0.1] | 2021.11.04
+## [1.0.2] | 2021.12.09
+- Fixed matching client type
+- Print device info by default. Only use quite option for client_id_blob info
+- Save challenge base64 to txt file if parsing client_id_blob (so you can verify from https://tools.axinom.com/decoders/LicenseRequest)
+---
+
+## [1.0.1] | 2021.12.04
 - Added protobuf for parsing client_id_blob
 - Extract challenge directly from client_id_blob file
 - Fully refactored for getting/matching device info

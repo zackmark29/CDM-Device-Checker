@@ -3,3 +3,5 @@ __pycache__
 *.html
 device*
 *.json
+\test
+*.txt
