@@ -1,5 +1,8 @@
 # CDM-Device-Checker
 
+# AXINOM site is currently broken
+---
+
 Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest
 
 ## CHANGELOGS:
