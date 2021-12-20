@@ -4,4 +4,3 @@ __pycache__
 device*
 *.json
 \test
-*.txt

@@ -1,7 +1,11 @@
 import sys
 import re
 import json
+import base64
+import binascii
 import argparse
+
+from simple_logger import *
 from pathlib import Path
 from requests import Session
 
@@ -9,11 +13,8 @@ TOKEN = 'CfDJ8J3HFu-R0HlNvutoAYRa68EjeSliPuQR8Ogt7niNVzgha2wJQ1jDNyCmxzGv95aKF91
 COOKIE = '.AspNetCore.Antiforgery.pcAz0O62JyE=CfDJ8J3HFu-R0HlNvutoAYRa68FIgcbDEr06bq4cJyWCC5Pl6SyEHKMWynbvPsY7pf8KYwtuZLNZMHoMv8uhJxOUyWYpCA-yrH3NW8uH0pMACoc_u8afV2xtezmcOmG53Qe9uq8U7Hv-84UWvRRraNvbsQI'
 
 
-def printf(msg: str):
-    print('[INFO]: ', msg)
-
-
 def fetch_challenge_data(challenge: str) -> str:
+    info('Fetching license request data')
     res = Session().post(
         url='https://tools.axinom.com/decoders/LicenseRequest',
         data={
@@ -29,66 +30,67 @@ def fetch_challenge_data(challenge: str) -> str:
         }
     )
     if not res.ok:
-        sys.exit(res.text)
+        error(res.text)
 
     return res.text
 
 
 def parse_challenge_data(data: str) -> dict:
-    print('[INFO]: ', 'Getting license request info')
+    info('Parsing device info')
 
     errors = re.compile(r'remove-sign.+>\s(.+)[<^.]')
 
-    for error in errors.findall(data):
-        print('[ERROR]:', error.replace('&quot;', '"'))
-
-    printf('Parsing device info')
+    for err in errors.findall(data):
+        error(err.replace('&quot;', '"'), False)
 
     td = r'>(.+)<\/td>.*\n.+<td>'
     tags = re.findall(td + r'(.+)[<^]', data)
     divs = re.findall(td + r'\n.+<div>(.+)[<^]', data)
-
     client_type = [x for x in tags if 'Type' in x][0][1]
 
-    return dict(
+    dic = dict(
         (x, y.replace('&#x0;', ''))
         for x, y in tags + divs
-    ) | {'Type': client_type}
+    )
+    dic.update({'Type': client_type})
+    return dic
 
 
-def get_device_info(challenge: str, quite: bool) -> None:
+def get_device_info(challenge: str, cwd: Path) -> None:
 
     data = fetch_challenge_data(challenge)
     tags = parse_challenge_data(data)
 
     def get(tag: str) -> str:
-        match = tags.get(tag, "")
+        match = tags.get(tag)
 
-        if match == "":
-            print(f'[WARN]:  No match found for: {tag}')
+        if match is None:
+            warn(f'No match found for: {tag}')
 
         return match
 
-    device_name = get('device_name')
     system_id = get('System ID')
 
-    if system_id == "":
-        sys.exit(f'[ERROR]: System ID is not found. '
-                 'Looks like your challenge data is invalid')
+    if system_id is None:
+        error(f'[ERROR]: System ID is not found. '
+              'Looks like your challenge data is invalid')
+
+    status = get('Status')
+    sec_level = get('Security Level')
+    model_name = get('model_name')
+    device_name = get('device_name')
+    sys_chip = get('System on Chip')
 
     data = {
-        'status': get('Status').upper(),
+        'status': status.upper(),
         'ForTestingOnly': get('For Testing Only'),
         'systemId': system_id,
-        'securityLevel': {
-            '1': 'LEVEL_1',
-            '3': 'LEVEL_3'
-        }.get(get('Security Level')),
+        'securityLevel': f'LEVEL_{sec_level}',
         'manufacturer': get('Manufacturer'),
         'model': get('Model'),
         'modelYear': get('Model Year'),
-        'modelName': get('model_name'),
-        'systemOnChip': get('System on Chip'),
+        'modelName': model_name,
+        'systemOnChip': sys_chip,
         'type': get('Type'),
         'AdditionalInfo': {
             'applicationName': get('application_name'),
@@ -101,38 +103,66 @@ def get_device_info(challenge: str, quite: bool) -> None:
             'widevineCdmVersion': get('widevine_cdm_version')
         }
     }
+    if status == 'REVOKED':
+        warn('This device was already REVOKED :(')
+    else:
+        info('This device is currently ACTIVE :)')
 
-    file_name = Path(f'{device_name}-{system_id}-DeviceInfo.json')
+    name = model_name.replace(" ", "-")
+    if 'generic' in sys_chip:
+        name = device_name
+
+    file_name = cwd / f'{name}-{system_id}-L{sec_level}-[{status}].json'
     data = json.dumps(data, indent=4, ensure_ascii=False)
     file_name.write_text(data)
     print('\n', data)
 
-    printf(f'Saving device info to: {file_name}')
+    info(f'Device info has been saved to: "{file_name}"')
+    sys.exit()
+
+
+def is_base64(txt) -> bool:
+    try:
+        base64.b64decode(txt, validate=True)
+        return True
+    except binascii.Error:
+        return False
 
 
 def main(arg):
-    if arg.test:
-        challenge = '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'
-        printf('Using the test challenge')
-    elif 'blob' in arg.challenge:
+    chal_path = Path(arg.challenge)
+
+    # base64 string
+    if is_base64(arg.challenge):
+        get_device_info(arg.challenge, Path().cwd())
+    elif not chal_path.is_file():
+        error('Invalid challenge base64 input')
+
+    if not chal_path.exists():
+        error(f'{chal_path} does not exist')
+
+    # device_client_id_blob
+    if 'blob' in arg.challenge or chal_path.suffix == '.bin':
         from cdm import extract_challenge
 
-        printf('Extracting challenge info from client_id_blob')
-        challenge = extract_challenge(arg.challenge, arg.quite)
+        info(f'Extracting challenge data from" "{chal_path}"')
+        challenge = extract_challenge(chal_path, arg.quite)
 
-        printf('Saving challenge base64 to "challenge.txt" file')
+        info('Writing challenge base64 to "challenge.txt" file')
         Path('challenge.txt').write_text(challenge)
-    else:
-        printf('Using challenge from argument')
-        challenge = arg.challenge
 
-    get_device_info(challenge, arg.quite)
+    # any txt file name with .txt extension
+    elif chal_path.suffix == '.txt':
+        info(f'Loading challenge from "{chal_path}"')
+        challenge = chal_path.read_text()
+    else:
+        error('Invalid challenge input file')
+
+    get_device_info(challenge, chal_path.parent)
 
 
 if __name__ == '__main__':
-    # Just added arguments for future updates
-    parser = argparse.ArgumentParser("Simple util to get CDM device info from license request/challenge.")
+    parser = argparse.ArgumentParser("Simple util to parse CDM device info from license request/challenge.")
     parser.add_argument(dest='challenge', nargs='?', default=None, help='Challenge or license request')
-    parser.add_argument('-t', '--test', default=False, action='store_true', help='Use the test challenge')
     parser.add_argument('-q', '--quite', default=False, action='store_true', help='Don\'t print the results')
     sys.exit(main(parser.parse_args()))
