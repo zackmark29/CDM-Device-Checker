@@ -1,11 +1,50 @@
 # CDM-Device-Checker
 ---
 
-Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest  
+Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest
 SITE STATUS: `ACTIVE`
 
 ---
-## CHANGELOGS:
+## **TIPS**:
+## Add context menu for easy check from challange.txt or client_id_blob
+
+INSTRUCTIONS:
+
+- Change the dir from check.bat
+- Change the path from context_menu.reg
+- double click `context_menu.reg` to add it to your registry.
+- You can also change the context title: `Check Client ID Blob`
+- You can also drag and drop the blob directly to check.bat
+
+```re
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\*\shell\Check Client ID Blob\command]
+@="\"C:\\User\\Admin\\Downloads\\cdm_device_checker\\check.bat\" %1"
+```
+
+`From client_id_blob`
+
+![image](https://user-images.githubusercontent.com/62680932/147465896-bd33c653-96a4-4220-af63-6e0750c6ec66.png)
+
+
+`From challange.txt`
+
+![image](https://user-images.githubusercontent.com/62680932/147467317-3adf2f40-78dc-4a82-9146-b642395308d0.png)
+
+---
+
+## **CHANGELOGS**:
+
+---
+
+## [1.0.4] | 2021-12-27
+- [1087720375](https://github.com/zackmark29/CDM-Device-Checker/issues/2#issue-1087720375) |
+Added registry context menu for easy check from challange.txt or client_id_blob
+- [1087669514](https://github.com/zackmark29/CDM-Device-Checker/issues/1#issue-1087669514) |
+Fixed iterating on NoneType item
+
+---
 
 ## [1.0.3] | 2021-12-21
 
@@ -42,7 +81,7 @@ SITE STATUS: `ACTIVE`
 
 ---
 
-## USAGE
+## **USAGE**
 
 ```
 py.check.py "challenge base64 string"
@@ -54,7 +93,7 @@ add -q/--quite if you don't want to print the results
 
 ---
 
-## RESULT
+## **RESULT**
 
 ```json
 {

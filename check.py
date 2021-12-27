@@ -109,7 +109,7 @@ def get_device_info(challenge: str, cwd: Path) -> None:
         info('This device is currently ACTIVE :)')
 
     name = model_name.replace(" ", "-")
-    if 'generic' in sys_chip:
+    if sys_chip and 'generic' in sys_chip:
         name = device_name
 
     file_name = cwd / f'{name}-{system_id}-L{sec_level}-[{status}].json'
@@ -145,9 +145,8 @@ def main(arg):
     if 'blob' in arg.challenge or chal_path.suffix == '.bin':
         from cdm import extract_challenge
 
-        info(f'Extracting challenge data from" "{chal_path}"')
+        info(f'Extracting challenge data from: "{chal_path}"')
         challenge = extract_challenge(chal_path, arg.quite)
-
         info('Writing challenge base64 to "challenge.txt" file')
         Path('challenge.txt').write_text(challenge)
 

@@ -1,8 +1,8 @@
 @echo off
 echo.
-:start
-set /p challenge="ENTER CHALLENGE DATA/PATH: "
+cd /d "C:\Users\Admin\Downloads\cdm_device_checker"
+set arg=%*
+echo %arg%
+py check.py %arg%
 echo.
-py check.py "%challenge%"
-echo.
-goto start
+pause

@@ -13,8 +13,9 @@ def extract_challenge(client_id_blob: Path, quite: bool) -> str:
 
     try:
         client_id.ParseFromString(client_id_blob.read_bytes())
-    except DecodeError:
-        error(f'Unable to decode/parse "{client_id_blob}"')
+    except DecodeError as e:
+        error(f'Unable to decode/parse "{client_id_blob}"', False)
+        error(e)
 
     lic_request = SignedLicenseRequest()
     lic_request.Msg.ClientId.CopyFrom(client_id)
