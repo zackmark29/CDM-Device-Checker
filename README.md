@@ -1,7 +1,8 @@
 # CDM-Device-Checker
 ---
 
-Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest
+Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest  
+
 SITE STATUS: `ACTIVE`
 
 ---
@@ -10,18 +11,9 @@ SITE STATUS: `ACTIVE`
 
 INSTRUCTIONS:
 
-- Change the dir from check.bat
-- Change the path from context_menu.reg
-- double click `context_menu.reg` to add it to your registry.
-- You can also change the context title: `Check Client ID Blob`
-- You can also drag and drop the blob directly to check.bat
-
-```re
-Windows Registry Editor Version 5.00
-
-[HKEY_CLASSES_ROOT\*\shell\Check Client ID Blob\command]
-@="\"C:\\User\\Admin\\Downloads\\cdm_device_checker\\check.bat\" %1"
-```
+- Just double click the **`add_context_menu.bat`** to automatically add context menu into your registry
+- You can also change the context title ("Check Client Id Blob") inside the bat file
+- Now you can do like the ss below or you can just drag and drop the file in the bat file
 
 `From client_id_blob`
 
@@ -34,11 +26,21 @@ Windows Registry Editor Version 5.00
 
 ---
 
-## **CHANGELOGS**:
+## **CHANGELOGS**
+
+## [1.0.5] | 2022-01-08
+
+- Removed context_menu.reg and replaced with batch file instead to automatically assign the current check.bat full path
+- Added current full path in check.bat instead of adding manually
+- Renamed proto to wv_proto to avoid conflict from proto import
+- colored output for device info and logger
+- You can edit the output file name format (see in config.py)
+- And some little changes
 
 ---
 
 ## [1.0.4] | 2021-12-27
+
 - [1087720375](https://github.com/zackmark29/CDM-Device-Checker/issues/2#issue-1087720375) |
 Added registry context menu for easy check from challange.txt or client_id_blob
 - [1087669514](https://github.com/zackmark29/CDM-Device-Checker/issues/1#issue-1087669514) |

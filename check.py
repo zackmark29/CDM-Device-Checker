@@ -1,3 +1,5 @@
+__version__ = '1.0.5'
+
 import sys
 import re
 import json
@@ -5,18 +7,26 @@ import base64
 import binascii
 import argparse
 
-from simple_logger import *
 from pathlib import Path
 from requests import Session
 
-TOKEN = 'CfDJ8J3HFu-R0HlNvutoAYRa68EjeSliPuQR8Ogt7niNVzgha2wJQ1jDNyCmxzGv95aKF911acVDx12U1BFi0z-JcR2taHJKjY6X0qWq2H5MD65oEZJYGUkzop-l7rOa8eJJKs1V9BjJZDjLPmdOsXmquBU'
-COOKIE = '.AspNetCore.Antiforgery.pcAz0O62JyE=CfDJ8J3HFu-R0HlNvutoAYRa68FIgcbDEr06bq4cJyWCC5Pl6SyEHKMWynbvPsY7pf8KYwtuZLNZMHoMv8uhJxOUyWYpCA-yrH3NW8uH0pMACoc_u8afV2xtezmcOmG53Qe9uq8U7Hv-84UWvRRraNvbsQI'
+from config import (
+    fg,
+    SITE,
+    TOKEN,
+    COOKIE,
+    info,
+    error,
+    warn,
+    FILE_NAME_FORMAT,
+    FILE_NAME_SEPARATOR
+)
 
 
 def fetch_challenge_data(challenge: str) -> str:
     info('Fetching license request data')
     res = Session().post(
-        url='https://tools.axinom.com/decoders/LicenseRequest',
+        url=SITE,
         data={
             'LicenseRequestEncoding': 'Base64',
             'LicenseRequest': challenge,
@@ -25,7 +35,7 @@ def fetch_challenge_data(challenge: str) -> str:
         headers={
             'Content-Type': 'application/x-www-form-urlencoded',
             'Referer': 'https://tools.axinom.com/',
-            'Accept': '*.*',
+            'Accept': '*/*',
             'Cookie': COOKIE
         }
     )
@@ -46,6 +56,12 @@ def parse_challenge_data(data: str) -> dict:
     td = r'>(.+)<\/td>.*\n.+<td>'
     tags = re.findall(td + r'(.+)[<^]', data)
     divs = re.findall(td + r'\n.+<div>(.+)[<^]', data)
+
+    if not tags and not divs:
+        error('No any result found. Possible problem are: '
+              'Invalid challenge, Invalid RegEx or Site has been updated')
+
+    # Since it has mutlitple Type result, just get the second one
     client_type = [x for x in tags if 'Type' in x][0][1]
 
     dic = dict(
@@ -58,13 +74,13 @@ def parse_challenge_data(data: str) -> dict:
 
 def get_device_info(challenge: str, cwd: Path) -> None:
 
-    data = fetch_challenge_data(challenge)
-    tags = parse_challenge_data(data)
+    main_info = fetch_challenge_data(challenge)
+    tags = parse_challenge_data(main_info)
 
     def get(tag: str) -> str:
-        match = tags.get(tag)
+        match = tags.get(tag, "")
 
-        if match is None:
+        if match == "":
             warn(f'No match found for: {tag}')
 
         return match
@@ -72,56 +88,87 @@ def get_device_info(challenge: str, cwd: Path) -> None:
     system_id = get('System ID')
 
     if system_id is None:
-        error(f'[ERROR]: System ID is not found. '
+        error(f'System ID is not found. '
               'Looks like your challenge data is invalid')
 
-    status = get('Status')
     sec_level = get('Security Level')
-    model_name = get('model_name')
-    device_name = get('device_name')
-    sys_chip = get('System on Chip')
 
-    data = {
-        'status': status.upper(),
-        'ForTestingOnly': get('For Testing Only'),
+    main_info = {
+        'status': get('Status').upper(),
+        'forTestingOnly': get('For Testing Only'),
         'systemId': system_id,
         'securityLevel': f'LEVEL_{sec_level}',
         'manufacturer': get('Manufacturer'),
         'model': get('Model'),
         'modelYear': get('Model Year'),
-        'modelName': model_name,
-        'systemOnChip': sys_chip,
-        'type': get('Type'),
-        'AdditionalInfo': {
-            'applicationName': get('application_name'),
-            'architectureName': get('architecture_name'),
-            'buildInfo': get('build_info'),
-            'companyName': get('company_name'),
-            'deviceId': get('device_id'),
-            'deviceName': device_name,
-            'productName': get('product_name'),
-            'widevineCdmVersion': get('widevine_cdm_version')
-        }
+        'modelName': get('model_name'),
+        'systemOnChip': get('System on Chip'),
+        'type': get('Type')
     }
-    if status == 'REVOKED':
-        warn('This device was already REVOKED :(')
-    else:
-        info('This device is currently ACTIVE :)')
+    additional_info = {
+        'applicationName': get('application_name'),
+        'architectureName': get('architecture_name'),
+        'buildInfo': get('build_info'),
+        'companyName': get('company_name'),
+        'deviceId': get('device_id'),
+        'deviceName': get('device_name'),
+        'productName': get('product_name'),
+        'widevineCdmVersion': get('widevine_cdm_version')
+    }
 
-    name = model_name.replace(" ", "-")
-    if sys_chip and 'generic' in sys_chip:
-        name = device_name
+    print('\n', '-' * 50)
 
-    file_name = cwd / f'{name}-{system_id}-L{sec_level}-[{status}].json'
-    data = json.dumps(data, indent=4, ensure_ascii=False)
-    file_name.write_text(data)
-    print('\n', data)
+    def colored_print(dic: dict):
+        for key, val in dic.items():
+            if key is None:
+                continue
+            if key == 'status':
+                if val == 'REVOKED':
+                    val = f'{fg.RED}{val}{fg.RESET}'
+                else:
+                    val = f'{fg.GREEN}{val}{fg.RESET}'
+            print(' ' * 4, f'{fg.CYAN}{key}: {fg.RESET}{val}')
 
-    info(f'Device info has been saved to: "{file_name}"')
+    colored_print(main_info)
+    print()
+    colored_print(additional_info)
+
+    print('-' * 50, '\n')
+
+    file_name = format_file_name(main_info)
+
+    main_info.update({'additionalInfo': additional_info})
+    main_info = json.dumps(main_info, indent=4, ensure_ascii=False)
+    output = cwd / f'{file_name}.json'
+    output.write_text(main_info)
+
+    info(f'Output File Name: "{file_name}"')
+    info(f'Device info has been saved to: "{output}"')
     sys.exit()
 
 
-def is_base64(txt) -> bool:
+def format_file_name(data: dict) -> str:
+    keys = []
+    for name in FILE_NAME_FORMAT.split(' '):
+        # removed first the square brackets
+        key = re.sub(r'[\[\]]', '', name)
+        key = data.get(key)
+
+        if key is None:
+            continue
+
+        # just use square brackets if it is set in the template
+        if re.match(r'(\[.+\])', name):
+            key = f'[{key}]'
+
+        # replace LEVEL_1/3
+        key = str(key).replace('LEVEL_', 'L').replace(' ', '-')
+        keys.append(key)
+
+    return FILE_NAME_SEPARATOR.join(keys)
+
+
+def is_base64(txt: str) -> bool:
     try:
         base64.b64decode(txt, validate=True)
         return True
@@ -130,16 +177,29 @@ def is_base64(txt) -> bool:
 
 
 def main(arg):
+    txt_file = 'challenge.txt'
+
+    if arg.challenge is None:
+        error('Challenge/Client Id Blob input is empty.'
+              f' Will load the default challenge from "{txt_file}" instead', False)
+
+        default_chal = Path(txt_file)
+
+        if not default_chal.exists():
+            error(f'{txt_file} is not exist')
+
+        arg.challenge = default_chal.read_text()
+
+    # check if the first arg is a valid base64 else assume that it is a file instead
+    if is_base64(arg.challenge):
+        # info('Using input challenge base64')
+        get_device_info(arg.challenge, Path().cwd())
+
+    # file argument
     chal_path = Path(arg.challenge)
 
-    # base64 string
-    if is_base64(arg.challenge):
-        get_device_info(arg.challenge, Path().cwd())
-    elif not chal_path.is_file():
-        error('Invalid challenge base64 input')
-
     if not chal_path.exists():
-        error(f'{chal_path} does not exist')
+        error(f'"{chal_path}" does not exist')
 
     # device_client_id_blob
     if 'blob' in arg.challenge or chal_path.suffix == '.bin':
@@ -148,7 +208,7 @@ def main(arg):
         info(f'Extracting challenge data from: "{chal_path}"')
         challenge = extract_challenge(chal_path, arg.quite)
         info('Writing challenge base64 to "challenge.txt" file')
-        Path('challenge.txt').write_text(challenge)
+        Path(txt_file).write_text(challenge)
 
     # any txt file name with .txt extension
     elif chal_path.suffix == '.txt':
@@ -161,7 +221,11 @@ def main(arg):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser("Simple util to parse CDM device info from license request/challenge.")
+    parser = argparse.ArgumentParser(
+        prog=f'CDM Device Checker | Version {__version__}',
+        description='Simple util to parse CDM device info from license request/challenge.'
+    )
     parser.add_argument(dest='challenge', nargs='?', default=None, help='Challenge or license request')
     parser.add_argument('-q', '--quite', default=False, action='store_true', help='Don\'t print the results')
-    sys.exit(main(parser.parse_args()))
+    args = parser.parse_args()
+    sys.exit(main(args))

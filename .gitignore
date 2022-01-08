@@ -4,3 +4,4 @@ __pycache__
 device*
 *.json
 \test
+test.py
