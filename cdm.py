@@ -1,7 +1,7 @@
 import base64
 
 from pathlib import Path
-from config import error
+from config import error, info
 from google.protobuf import text_format
 from google.protobuf.message import DecodeError
 from wv_proto.wv_proto2_pb2 import ClientIdentification, SignedLicenseRequest
@@ -25,7 +25,7 @@ def extract_challenge(client_id_blob: Path, quite: bool) -> str:
     if not quite:
         print()
         for msg in text_format.MessageToString(lic_request).splitlines():
-            print(msg)
+            info(msg)
 
     print()
     challenge_b64 = base64.b64encode(license_challenge).decode()

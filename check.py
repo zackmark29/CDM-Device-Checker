@@ -1,4 +1,4 @@
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 import sys
 import re
@@ -72,7 +72,7 @@ def parse_challenge_data(data: str) -> dict:
     return dic
 
 
-def get_device_info(challenge: str, cwd: Path) -> None:
+def get_device_info(challenge: str, cwd: Path, save: bool) -> None:
 
     main_info = fetch_challenge_data(challenge)
     tags = parse_challenge_data(main_info)
@@ -113,6 +113,7 @@ def get_device_info(challenge: str, cwd: Path) -> None:
         'deviceId': get('device_id'),
         'deviceName': get('device_name'),
         'productName': get('product_name'),
+        'osVersion': get('os_version'),
         'widevineCdmVersion': get('widevine_cdm_version')
     }
 
@@ -134,6 +135,9 @@ def get_device_info(challenge: str, cwd: Path) -> None:
     colored_print(additional_info)
 
     print('-' * 50, '\n')
+
+    if not save:
+        sys.exit()
 
     file_name = format_file_name(main_info)
 
@@ -193,7 +197,7 @@ def main(arg):
     # check if the first arg is a valid base64 else assume that it is a file instead
     if is_base64(arg.challenge):
         # info('Using input challenge base64')
-        get_device_info(arg.challenge, Path().cwd())
+        get_device_info(arg.challenge, Path().cwd(), arg.save)
 
     # file argument
     chal_path = Path(arg.challenge)
@@ -217,7 +221,7 @@ def main(arg):
     else:
         error('Invalid challenge input file')
 
-    get_device_info(challenge, chal_path.parent)
+    get_device_info(challenge, chal_path.parent, arg.save)
 
 
 if __name__ == '__main__':
@@ -226,6 +230,7 @@ if __name__ == '__main__':
         description='Simple util to parse CDM device info from license request/challenge.'
     )
     parser.add_argument(dest='challenge', nargs='?', default=None, help='Challenge or license request')
-    parser.add_argument('-q', '--quite', default=False, action='store_true', help='Don\'t print the results')
+    parser.add_argument('-q', '--quite', default=False, action='store_true', help='Don\'t print the info of client_id_blob')
+    parser.add_argument('-s', '--save', default=False, action='store_true', help='Save device info to json file')
     args = parser.parse_args()
     sys.exit(main(args))

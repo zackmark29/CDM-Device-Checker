@@ -28,6 +28,13 @@ INSTRUCTIONS:
 
 ## **CHANGELOGS**
 
+## [1.0.6] | 2022-01-23
+
+- Saving file is now optional (add --save arg to save the file)
+- Added os_version info
+
+---
+
 ## [1.0.5] | 2022-01-08
 
 - Removed context_menu.reg and replaced with batch file instead to automatically assign the current check.bat full path
@@ -36,6 +43,10 @@ INSTRUCTIONS:
 - colored output for device info and logger
 - You can edit the output file name format (see in config.py)
 - And some little changes
+
+SAMPLE OUTPUT:
+
+![image](https://user-images.githubusercontent.com/62680932/148638846-c10c90d0-7251-4287-9ae2-6c886575f4a6.png)
 
 ---
 
