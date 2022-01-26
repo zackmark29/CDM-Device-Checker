@@ -11,7 +11,7 @@ SITE STATUS: `ACTIVE`
 
 INSTRUCTIONS:
 
-- Just double click the **`add_context_menu.bat`** to automatically add context menu into your registry
+- Right click and run as admin the **`add_context_menu.bat`** to automatically add context menu into your registry
 - You can also change the context title ("Check Client Id Blob") inside the bat file
 - Now you can do like the ss below or you can just drag and drop the file in the bat file
 
