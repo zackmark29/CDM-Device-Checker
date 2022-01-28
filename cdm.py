@@ -1,14 +1,12 @@
-import base64
-
 from pathlib import Path
-from config import error, info
+from base64 import b64encode
+from config import colored_print, error, info, printl
 from google.protobuf import text_format
 from google.protobuf.message import DecodeError
 from wv_proto.wv_proto2_pb2 import ClientIdentification, SignedLicenseRequest
 
 
-def extract_challenge(client_id_blob: Path, quite: bool) -> str:
-
+def parse_client_id_blob(client_id_blob: Path, quite: bool) -> str:
     client_id = ClientIdentification()
 
     try:
@@ -19,14 +17,36 @@ def extract_challenge(client_id_blob: Path, quite: bool) -> str:
 
     lic_request = SignedLicenseRequest()
     lic_request.Msg.ClientId.CopyFrom(client_id)
-
     license_challenge = lic_request.SerializeToString()
+    challenge_b64 = b64encode(license_challenge).decode()
 
-    if not quite:
+    printl()
+    info('DEVICE CLIENT ID BLOB INFO:')
+    printl()
+
+    if quite:
+        cid = lic_request.Msg.ClientId
+        client_info = {}
+        for i in cid.ClientInfo:
+            i.Name = i.Name.replace('_', ' ').title().replace(' ', '')
+            if i.Name == 'DeviceId':
+                i.Value = b64encode(i.Value.encode()).decode()
+            client_info[i.Name] = i.Value
+
+        cc = cid._ClientCapabilities
+        client_info.update({
+            'SystemId': cid.Token._DeviceCertificate.SystemId,
+            'ClientCapabilities': {
+                'SessionToken': cc.SessionToken,
+                'MaxHdcpVersion': cc.MaxHdcpVersion,
+                'OemCryptoApiVersion': cc.OemCryptoApiVersion
+            }
+        })
+        colored_print(client_info)
+    else:
         print()
         for msg in text_format.MessageToString(lic_request).splitlines():
             info(msg)
+    printl()
 
-    print()
-    challenge_b64 = base64.b64encode(license_challenge).decode()
     return challenge_b64

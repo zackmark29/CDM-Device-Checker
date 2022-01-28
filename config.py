@@ -12,6 +12,8 @@ SITE = 'https://tools.axinom.com/decoders/LicenseRequest'
 FILE_NAME_FORMAT = 'manufacturer modelName systemId securityLevel [status]'
 FILE_NAME_SEPARATOR = '-'
 
+COLORED_PRINT = False
+
 
 @dataclass(init=False)
 class fg:
@@ -31,14 +33,43 @@ class style:
 
 # simple logger
 def info(msg: str):
-    print(f'{fg.GREEN}{style.DIM}[I]: {fg.RESET}{msg}')
+    if COLORED_PRINT:
+        print(f'{fg.GREEN}{style.DIM}[I]: {fg.RESET}{msg}')
+    else:
+        print(f'[I]: {msg}')
 
 
 def warn(msg: str):
-    print(f'{fg.YELLOW}{style.DIM}[W]: {fg.RESET}{msg}')
+    if COLORED_PRINT:
+        print(f'{fg.YELLOW}{style.DIM}[W]: {fg.RESET}{msg}')
+    else:
+        print(f'[W]: {msg}')
 
 
 def error(msg: str, auto_exit: bool = True):
-    print(f'{fg.RED}{style.DIM}[E]: {fg.RESET}{msg}')
+    if COLORED_PRINT:
+        print(f'{fg.RED}{style.DIM}[E]: {fg.RESET}{msg}')
+    else:
+        print(f'[E]: {msg}')
+
     if auto_exit:
         sys.exit()
+
+
+def printl(length: int = 50, end=None):
+    print('-' * length, end=end)
+
+
+def colored_print(dic: dict):
+    for key, val in dic.items():
+        if key is None:
+            continue
+        if key == 'status' and COLORED_PRINT:
+            if val == 'REVOKED':
+                val = f'{fg.RED}{val}{fg.RESET}'
+            else:
+                val = f'{fg.GREEN}{val}{fg.RESET}'
+        if COLORED_PRINT:
+            print(' ' * 4, f'{fg.CYAN}{key}: {fg.RESET}{val}')
+        else:
+            print(' ' * 4, f'{key}: {val}')

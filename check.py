@@ -1,4 +1,4 @@
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 
 import sys
 import re
@@ -9,18 +9,21 @@ import argparse
 
 from pathlib import Path
 from requests import Session
-
 from config import (
-    fg,
+    colored_print,
     SITE,
     TOKEN,
     COOKIE,
     info,
     error,
+    printl,
     warn,
     FILE_NAME_FORMAT,
-    FILE_NAME_SEPARATOR
+    FILE_NAME_SEPARATOR,
 )
+from urllib3 import disable_warnings
+from urllib3.exceptions import InsecureRequestWarning
+disable_warnings(InsecureRequestWarning)
 
 
 def fetch_challenge_data(challenge: str) -> str:
@@ -37,7 +40,8 @@ def fetch_challenge_data(challenge: str) -> str:
             'Referer': 'https://tools.axinom.com/',
             'Accept': '*/*',
             'Cookie': COOKIE
-        }
+        },
+        verify=False
     )
     if not res.ok:
         error(res.text)
@@ -51,7 +55,7 @@ def parse_challenge_data(data: str) -> dict:
     errors = re.compile(r'remove-sign.+>\s(.+)[<^.]')
 
     for err in errors.findall(data):
-        error(err.replace('&quot;', '"'), False)
+        error('[AXINOM]: ' + err.replace('&quot;', '"'), False)
 
     td = r'>(.+)<\/td>.*\n.+<td>'
     tags = re.findall(td + r'(.+)[<^]', data)
@@ -59,7 +63,7 @@ def parse_challenge_data(data: str) -> dict:
 
     if not tags and not divs:
         error('No any result found. Possible problem are: '
-              'Invalid challenge, Invalid RegEx or Site has been updated')
+              'Invalid challenge, Invalid RegEx, Site has been updated or currently not available')
 
     # Since it has mutlitple Type result, just get the second one
     client_type = [x for x in tags if 'Type' in x][0][1]
@@ -117,24 +121,14 @@ def get_device_info(challenge: str, cwd: Path, save: bool) -> None:
         'widevineCdmVersion': get('widevine_cdm_version')
     }
 
-    print('\n', '-' * 50)
-
-    def colored_print(dic: dict):
-        for key, val in dic.items():
-            if key is None:
-                continue
-            if key == 'status':
-                if val == 'REVOKED':
-                    val = f'{fg.RED}{val}{fg.RESET}'
-                else:
-                    val = f'{fg.GREEN}{val}{fg.RESET}'
-            print(' ' * 4, f'{fg.CYAN}{key}: {fg.RESET}{val}')
-
+    printl()
+    info("AXINOM'S DEVICE INFO RESPONSE:")
+    printl()
     colored_print(main_info)
     print()
     colored_print(additional_info)
 
-    print('-' * 50, '\n')
+    printl(end='\n')
 
     if not save:
         sys.exit()
@@ -184,13 +178,15 @@ def main(arg):
     txt_file = 'challenge.txt'
 
     if arg.challenge is None:
-        error('Challenge/Client Id Blob input is empty.'
-              f' Will load the default challenge from "{txt_file}" instead', False)
+        error('Challenge/Client Id Blob input is empty.', False)
+        if str(input(' ' * 5 + f'Do you want to load the default challenge from "{txt_file}" instead? '
+                     '(Press y/Y if yes or any key to exit): ')).lower() != 'y':
+            sys.exit()
 
         default_chal = Path(txt_file)
 
         if not default_chal.exists():
-            error(f'{txt_file} is not exist')
+            error(f'"{txt_file}" does not exist')
 
         arg.challenge = default_chal.read_text()
 
@@ -207,12 +203,14 @@ def main(arg):
 
     # device_client_id_blob
     if 'blob' in arg.challenge or chal_path.suffix == '.bin':
-        from cdm import extract_challenge
+        from cdm import parse_client_id_blob
 
-        info(f'Extracting challenge data from: "{chal_path}"')
-        challenge = extract_challenge(chal_path, arg.quite)
-        info('Writing challenge base64 to "challenge.txt" file')
-        Path(txt_file).write_text(challenge)
+        info(f'Parsing client id blob from: "{chal_path}"')
+        challenge = parse_client_id_blob(chal_path, arg.quite)
+
+        if arg.save:
+            info('Writing challenge base64 to "challenge.txt" file')
+            Path(txt_file).write_text(challenge)
 
     # any txt file name with .txt extension
     elif chal_path.suffix == '.txt':
@@ -227,7 +225,7 @@ def main(arg):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog=f'CDM Device Checker | Version {__version__}',
-        description='Simple util to parse CDM device info from license request/challenge.'
+        description='Simple util to parse CDM device info from license request/challenge\n.'
     )
     parser.add_argument(dest='challenge', nargs='?', default=None, help='Challenge or license request')
     parser.add_argument('-q', '--quite', default=False, action='store_true', help='Don\'t print the info of client_id_blob')
