@@ -1,4 +1,4 @@
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 
 import sys
 import re
@@ -174,7 +174,18 @@ def is_base64(txt: str) -> bool:
         return False
 
 
+def is_blob(arg: str, path: Path) -> bool:
+    return 'blob' in arg or path.suffix == '.bin'
+
+
 def main(arg):
+    # file argument
+    chal_path = Path(arg.challenge)
+
+    if not is_blob(arg.challenge, chal_path):
+        error('Only client_id_blob will be accepted for now since Axinom is not giving more device information')
+        sys.exit()
+
     txt_file = 'challenge.txt'
 
     if arg.challenge is None:
@@ -195,14 +206,11 @@ def main(arg):
         # info('Using input challenge base64')
         get_device_info(arg.challenge, Path().cwd(), arg.save)
 
-    # file argument
-    chal_path = Path(arg.challenge)
-
     if not chal_path.exists():
         error(f'"{chal_path}" does not exist')
 
     # device_client_id_blob
-    if 'blob' in arg.challenge or chal_path.suffix == '.bin':
+    if is_blob(arg.challenge, chal_path):
         from cdm import parse_client_id_blob
 
         info(f'Parsing client id blob from: "{chal_path}"')
@@ -211,6 +219,10 @@ def main(arg):
         if arg.save:
             info('Writing challenge base64 to "challenge.txt" file')
             Path(txt_file).write_text(challenge)
+
+        print()
+        info('Exiting...Axinom is not giving now more device information')
+        sys.exit()
 
     # any txt file name with .txt extension
     elif chal_path.suffix == '.txt':

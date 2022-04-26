@@ -3,7 +3,7 @@
 
 Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest  
 
-AXINOM'S LICENSE REQUEST STATUS: `WORKING`
+SITE STATUS: `WORKING BUT LIMITED`
 
 ---
 ## **TIPS**:
@@ -27,6 +27,14 @@ INSTRUCTIONS:
 ---
 
 ## **CHANGELOGS**
+
+## [1.0.8] | 2022-04-27
+
+- Fixed error when using the context menu with path that has blank/space
+- Disabled parsing from axinom (temporarily maybe)
+- Only accept and parse client_id_blob information
+
+---
 
 ## [1.0.7] | 2022-01-28
 

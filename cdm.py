@@ -24,29 +24,29 @@ def parse_client_id_blob(client_id_blob: Path, quite: bool) -> str:
     info('DEVICE CLIENT ID BLOB INFO:')
     printl()
 
-    if quite:
-        cid = lic_request.Msg.ClientId
-        client_info = {}
-        for i in cid.ClientInfo:
-            i.Name = i.Name.replace('_', ' ').title().replace(' ', '')
-            if i.Name == 'DeviceId':
-                i.Value = b64encode(i.Value.encode()).decode()
-            client_info[i.Name] = i.Value
-
-        cc = cid._ClientCapabilities
-        client_info.update({
-            'SystemId': cid.Token._DeviceCertificate.SystemId,
-            'ClientCapabilities': {
-                'SessionToken': cc.SessionToken,
-                'MaxHdcpVersion': cc.MaxHdcpVersion,
-                'OemCryptoApiVersion': cc.OemCryptoApiVersion
-            }
-        })
-        colored_print(client_info)
-    else:
+    if not quite:
         print()
         for msg in text_format.MessageToString(lic_request).splitlines():
             info(msg)
-    printl()
+        printl()
+        return challenge_b64
 
+    cid = lic_request.Msg.ClientId
+    client_info = {}
+    for i in cid.ClientInfo:
+        i.Name = i.Name.replace('_', ' ').title().replace(' ', '')
+        if i.Name == 'DeviceId':
+            i.Value = b64encode(i.Value.encode()).decode()
+        client_info[i.Name] = i.Value
+
+    cc = cid._ClientCapabilities
+    client_info.update({
+        'SystemId': cid.Token._DeviceCertificate.SystemId,
+        'ClientCapabilities': {
+            'SessionToken': cc.SessionToken,
+            'MaxHdcpVersion': cc.MaxHdcpVersion,
+            'OemCryptoApiVersion': cc.OemCryptoApiVersion
+        }
+    })
+    colored_print(client_info)
     return challenge_b64
