@@ -3,7 +3,7 @@
 
 Easily parse the cdm device info response from: https://tools.axinom.com/decoders/LicenseRequest  
 
-AXINOM'S LICENSE REQUEST STATUS: `MAINTENANCE/NOT AVAILABLE`
+AXINOM'S LICENSE REQUEST STATUS: `WORKING`
 
 ---
 ## **TIPS**:
