@@ -6,6 +6,12 @@ Easily parse the cdm device info response from: https://tools.axinom.com/decoder
 SITE STATUS: `WORKING BUT LIMITED`
 
 ---
+GUI Version here: 
+https://github.com/zackmark29/CDM-Device-Checker/releases/tag/v1.0.0-2022-10-03
+![image](https://user-images.githubusercontent.com/62680932/193505106-960f9f97-3b17-4d46-ab9a-88c53ce081c9.png)
+
+---
+
 ## **TIPS**:
 ## Add context menu for easy check from challange.txt or client_id_blob
 
